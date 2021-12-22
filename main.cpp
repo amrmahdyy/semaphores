@@ -178,7 +178,6 @@ int main(){
     mcollector.join();
 
     for(auto &thr:threads){
-
         thr.join();
 
     }
