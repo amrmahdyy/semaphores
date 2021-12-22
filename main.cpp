@@ -1,4 +1,3 @@
-
 #include <iostream>
 
 
@@ -35,6 +34,8 @@ sem_t semaphore;
 sem_t full;
 
 sem_t sEmpty;
+
+sem_t sBuffer;
 
 
 // returns random Number of type int, takes one input as the maximum value
@@ -90,15 +91,19 @@ void produce(){
 
     while(true){
 
-        cout<<"Produces"<<endl;
+        sleep(generateRandomTime(10));
 
-        // wait if queue is full, which means empty is 0
+        // if counter is busy
 
-        sem_wait(&sEmpty);
+        if(sem_trywait(&semaphore)!=0){
 
-        sem_wait(&semaphore);
+            cout<<"Waiting to read the Counter"<<endl;
 
-        buffer.push(counter);
+            sem_wait(&semaphore);
+
+        }
+
+        int tempCounter=counter;
 
         // reset the counter to 0
 
@@ -106,11 +111,38 @@ void produce(){
 
         sem_post(&semaphore);
 
+        // wait if queue is full, which means empty is 0
+
+        if(sem_trywait(&sEmpty)!=0){
+
+            cout<<"Buffer is Full"<<endl;
+
+            sem_wait(&sEmpty);
+
+        }
+
+        // wait if buffer is busy, used by producer or consumer
+
+        if(sem_trywait(&sBuffer)!=0){
+
+            cout<<"Buffer is Busy"<<endl;
+
+            sem_wait(&sBuffer);
+
+        }
+
+        cout<<"Adding value: "<<tempCounter<<" to the Buffer"<<endl;
+
+        buffer.push(tempCounter);
+
+        // releasing the semaphor buffer
+
+        sem_post(&sBuffer);
+
         // increment the atomic semaphore full
 
         sem_post(&full);
 
-        sleep(generateRandomTime(10));
 
     }
 
@@ -120,21 +152,38 @@ void consume(){
 
     while(true){
 
-        // check if buffer is not empty, if empty wait
+        sleep(generateRandomTime(12));
 
-        sem_wait(&full);
+        // check if buffer is empty, if empty wait
 
-        sem_wait(&semaphore);
+        if(sem_trywait(&full)!=0){
+
+            cout<<"Buffer is Empty"<<endl;
+
+            sem_wait(&full);
+
+        }
+
+        // if Buffer is busy
+
+        if(sem_trywait(&sBuffer)!=0){
+
+            cout<<"Buffer is busy"<<endl;
+
+            sem_wait(&sBuffer);
+
+        }
 
         cout<<"mCollector value is: "<<buffer.front()<<endl;
 
         buffer.pop();
 
-        sem_post(&semaphore);
+        sem_post(&sBuffer);
 
         sem_post(&sEmpty);
 
-        sleep(generateRandomTime(12));
+
+
 
     }
 
@@ -149,13 +198,15 @@ int main(){
 
     // buffer size
 
-    int bufferSize=10;
+    int bufferSize=20;
 
     sem_init(&semaphore,0,1);
 
     sem_init(&full,0,0);
 
     sem_init(&sEmpty,0,bufferSize);
+
+    sem_init(&sBuffer,0,1);
 
     // intialize mmonitor thread
 
@@ -178,6 +229,7 @@ int main(){
     mcollector.join();
 
     for(auto &thr:threads){
+
         thr.join();
 
     }
