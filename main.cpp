@@ -1,3 +1,4 @@
+
 #include <iostream>
 
 
@@ -24,12 +25,16 @@ using namespace std;
 int counter;
 
 
-int bufferSize;
+queue<int>buffer;
 
 
 int numOfThreads;
 
 sem_t semaphore;
+
+sem_t full;
+
+sem_t sEmpty;
 
 
 // returns random Number of type int, takes one input as the maximum value
@@ -81,11 +86,84 @@ void newMessage(int tid){
 
 }
 
+void produce(){
+
+    while(true){
+
+        cout<<"Produces"<<endl;
+
+        // wait if queue is full, which means empty is 0
+
+        sem_wait(&sEmpty);
+
+        sem_wait(&semaphore);
+
+        buffer.push(counter);
+
+        // reset the counter to 0
+
+        counter=0;
+
+        sem_post(&semaphore);
+
+        // increment the atomic semaphore full
+
+        sem_post(&full);
+
+        sleep(generateRandomTime(10));
+
+    }
+
+}
+
+void consume(){
+
+    while(true){
+
+        // check if buffer is not empty, if empty wait
+
+        sem_wait(&full);
+
+        sem_wait(&semaphore);
+
+        cout<<"mCollector value is: "<<buffer.front()<<endl;
+
+        buffer.pop();
+
+        sem_post(&semaphore);
+
+        sem_post(&sEmpty);
+
+        sleep(generateRandomTime(12));
+
+    }
+
+
+}
+
 int main(){
+
+    // number of threads
 
     int n=5;
 
+    // buffer size
+
+    int bufferSize=10;
+
     sem_init(&semaphore,0,1);
+
+    sem_init(&full,0,0);
+
+    sem_init(&sEmpty,0,bufferSize);
+
+    // intialize mmonitor thread
+
+    thread mmonitor(produce);
+
+    // intialize mcollector
+
+    thread mcollector(consume);
 
     vector<thread>threads;
 
@@ -95,13 +173,20 @@ int main(){
 
     }
 
+    mmonitor.join();
+
+    mcollector.join();
+
     for(auto &thr:threads){
 
         thr.join();
 
-
-
-
     }
+
+
+
+
+    // intialize new semaphore
+
 
 }
