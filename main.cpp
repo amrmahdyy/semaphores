@@ -181,63 +181,45 @@ void consume(){
         sem_post(&sBuffer);
 
         sem_post(&sEmpty);
-
-
-
-
     }
-
+}
+void intializeSemaphores(int bufferSize){
+    sem_init(&semaphore,0,1);
+    sem_init(&full,0,0);
+    sem_init(&sEmpty,0,bufferSize);
+    sem_init(&sBuffer,0,1);
 
 }
 
-int main(){
-
-    // number of threads
-
-    int n=5;
-
-    // buffer size
-
-    int bufferSize=20;
-
-    sem_init(&semaphore,0,1);
-
-    sem_init(&full,0,0);
-
-    sem_init(&sEmpty,0,bufferSize);
-
-    sem_init(&sBuffer,0,1);
+void createThreads(int n){
 
     // intialize mmonitor thread
 
     thread mmonitor(produce);
-
     // intialize mcollector
-
     thread mcollector(consume);
-
     vector<thread>threads;
-
     for(int i=1;i<=n;i++){
-
         threads.push_back( thread(newMessage,i));
-
     }
-
     mmonitor.join();
-
     mcollector.join();
-
     for(auto &thr:threads){
-
         thr.join();
-
     }
+}
 
-
-
-
-    // intialize new semaphore
-
-
+void userInputs(){
+    int n,bufferSize;
+    cout<<"Enter Number Of threads: ";
+    cin>>n;
+    cout<<""<<endl;
+    cout<<"Enter the size of the buffer: ";
+    cin>>bufferSize;
+    cout<<""<<endl;
+    intializeSemaphores(bufferSize);
+    createThreads(n);
+}
+int main(){
+    userInputs();
 }
