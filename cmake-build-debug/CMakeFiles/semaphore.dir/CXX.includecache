@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/test/Desktop/Term 7/Operating System/Labs/semaphore/main.cpp
+iostream
+-
+semaphore.h
+-
+ctime
+-
+unistd.h
+-
+queue
+-
+thread
+-
+
