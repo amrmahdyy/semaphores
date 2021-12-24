@@ -6,6 +6,9 @@
 #include <thread>
 #include<vector>
 #include <fstream>
+#include <chrono>
+#include <ctime>
+#include<sstream>
 using namespace std;
 
 #define RESET   "\033[0m"
@@ -30,30 +33,36 @@ sem_t logFull;
 //sem_t logEmpty;
 sem_t sLogBuffer;
 
+void writeToFile(string message){
+    ofstream logFile("loggingMessages",std::ios_base::app);
+    logFile<<message<<"\n";
+    logFile.close();
+}
 void logConsumer(){
     while(true){
         // sleeping for short amount of time
         sleep(1.5);
-        ofstream logFile("loggingMessages",std::ios_base::app);
+
         if(sem_trywait(&sLogBuffer)!=0){
-            cout<<RED<<"LOGGING BUFFER IS BUSY"<<RESET<<endl;
+            cout<<YELLOW<<"LOGGING BUFFER IS BUSY"<<RESET<<endl;
             sem_wait(&sLogBuffer);
         }
 // check if logging queue is empty
         if(sem_trywait(&logFull)!=0){
-            cout<<RED<<"LOGGING BUFFER IS EMPTY"<<RESET<<endl;
+            cout<<YELLOW<<"LOGGING BUFFER IS EMPTY"<<RESET<<endl;
             sem_wait(&logFull);
         }
         string message=loggingBuffer.front();
 // appending to logFile
-        logFile<<message<<"\n";
-        cout<<RED<<"APPENDING TO LOGGING FILE"<<RESET<<endl;
+
+        cout<<YELLOW<<"APPENDING TO LOGGING FILE"<<RESET<<endl;
+        writeToFile(message);
 // removing the last inserted message from loggingBuffer
         loggingBuffer.pop();
         sem_post(&sLogBuffer);
 // increase the number of empty slots in logging buffer
 //sem_post(&logEmpty);
-        logFile.close();
+
     }
 }
 // returns  random Number of type int, takes one input as the maximum value
@@ -64,10 +73,10 @@ int generateRandomTime(int maxTime){
 }
 void logProducer(string message){
     if(sem_trywait(&sLogBuffer)!=0){
-        cout<<RED<<"LOGGING BUFFER IS BUSY"<<RESET<<endl;
+        cout<<YELLOW<<"LOGGING BUFFER IS BUSY"<<RESET<<endl;
         sem_wait(&sLogBuffer);
     }
-    cout<<RED<<"ADDING TO LOGGING BUFFER"<<RESET<<endl;
+    cout<<YELLOW<<"ADDING TO LOGGING BUFFER"<<RESET<<endl;
     loggingBuffer.push(message);
     sem_post(&sLogBuffer);
     sem_post(&logFull);
@@ -199,7 +208,23 @@ void createThreads(int n=5,int counterMaxTime=10,int monitorMaxTime=20,int colle
         thr.join();
     }
 }
+void programCatalog(int n,int bufferSize,int counterMaxTime,int monitorMaxTime,int collectorMaxTime){
+    string message="Number of thread(s): "+to_string(n);
+    writeToFile(message);
+    message="Size the of the buffer: "+to_string(bufferSize);
+    writeToFile(message);
+    message="maximum sleeping time for Counter thread in seconds: "+to_string(counterMaxTime);
+    writeToFile(message);
+    message="maximum sleeping time for Monitor thread in seconds: "+to_string(monitorMaxTime);
+    writeToFile(message);
+    message="maximum sleeping time for Collector thread in seconds: "+to_string(collectorMaxTime);
+    writeToFile(message);
+    writeToFile("");
+    writeToFile("");
+
+}
 void automaticMode(){
+    programCatalog(5,20,10,20,20);
     intializeSemaphores();
     createThreads();
 }
@@ -220,6 +245,7 @@ void manualMode(){
     cout<<BLUE<<"Enter maximum sleeping time for Collector thread in seconds: "<<GREEN;
     cin>>collectorMaxTime;
     cout<<""<<RESET<<endl;
+    programCatalog(n,bufferSize,counterMaxTime,monitorMaxTIme,counterMaxTime);
     intializeSemaphores(bufferSize);
     createThreads(n,counterMaxTime,monitorMaxTIme,collectorMaxTime);
 }
@@ -234,12 +260,24 @@ int menu(){
     cout<<RESET;
     return choice;
 }
+// return current date in string type
+string getCurrentDate(){
+    auto start = std::chrono::system_clock::now();
+    std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+    std::stringstream dateStr;
+    dateStr<<std::ctime(&startTime);
+    return dateStr.str();
+}
 int main(){
     int userChoice=menu();
     if(userChoice<1 || userChoice>2){
         cout<<"Incorrect choice";
         return 0;
     }
+    writeToFile("**************");
+    writeToFile("USER MODE: "+to_string(userChoice));
+    writeToFile("CURRENT DATE: "+getCurrentDate());
+
     if(userChoice==1)automaticMode();
     else if(userChoice==2)manualMode();
 }
