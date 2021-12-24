@@ -243,4 +243,3 @@ int main(){
     if(userChoice==1)automaticMode();
     else if(userChoice==2)manualMode();
 }
-This paste expires in <1 hour. Public IP access. Share whatever you see with others in seconds with Context.Terms of ServiceReport this
