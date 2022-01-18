@@ -1,0 +1,2 @@
+# semaphores
+This program is a modification to the reader writer problem solved by using semaphores. A writer semaphore was needed to control the access of critical sections of counter and monitor threads, while 3 semaphores were needed to control the consumer producer problem for monitor and collector threads. It is similar to a mailbox messaging system where monitor is the mailbox, counter is the sender and collector is the receiver.
